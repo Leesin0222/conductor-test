@@ -12,6 +12,7 @@ enum PatternType: String, CaseIterable, Identifiable {
     case filePath = "파일 경로"
     case phoneNumber = "전화번호"
     case bankAccount = "계좌번호"
+    case base64Secret = "Base64 시크릿"
     case custom = "사용자 정의"
 
     var id: String { rawValue }
@@ -29,6 +30,7 @@ enum PatternType: String, CaseIterable, Identifiable {
         case .filePath: return "doc.fill"
         case .phoneNumber: return "phone.fill"
         case .bankAccount: return "banknote.fill"
+        case .base64Secret: return "lock.doc.fill"
         case .custom: return "star.fill"
         }
     }
@@ -39,6 +41,7 @@ enum PatternType: String, CaseIterable, Identifiable {
         case .apiKey, .password, .connectionString: return .medium
         case .emailPassword, .jwt, .filePath: return .medium
         case .phoneNumber, .bankAccount: return .high
+        case .base64Secret: return .medium
         case .custom: return .medium
         }
     }

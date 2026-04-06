@@ -14,6 +14,7 @@ class SensitiveDataDetector {
         FilePathPatterns(),
         PhoneNumberPatterns(),
         BankAccountPatterns(),
+        Base64SecretPatterns(),
     ]
 
     var customPatternManager: CustomPatternManager?

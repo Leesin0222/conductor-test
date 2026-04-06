@@ -14,15 +14,18 @@ macOS 메뉴바에 사는 보안 펫 앱. 클립보드를 실시간으로 감시
 
 | 패턴 | 예시 |
 |------|------|
-| API 키 | AWS, GitHub, Slack, Google, OpenAI 토큰 |
-| 비밀번호 | `password=`, `secret=` 등 키-값 형식 |
+| API 키 | AWS (Access Key + Secret Key), GitHub, Slack, Google, OpenAI 토큰 |
+| 비밀번호 | `password=`, `passwd=`, `pwd=`, `pw=`, `pass=`, `비밀번호=`, `비번=`, `패스워드=` 등 |
 | 개인 키 | RSA, SSH, PGP 프라이빗 키 |
-| 신용카드 | Luhn 검증 포함 13-19자리 |
-| 주민등록번호 | 체크섬 검증 포함 |
+| 신용카드 | Luhn 검증 포함 13-19자리 (공백/하이픈 허용) |
+| 주민등록번호 | 체크섬 검증 포함 (공백/하이픈 허용) |
+| 전화번호 | 한국 휴대폰 (`010-1234-5678`), 지역번호 (`02`, `031`), 국제형식 (`+82`) |
+| 계좌번호 | 키워드 기반 (`계좌번호:`) + 국민/신한/우리/하나/카카오/토스/농협/기업 은행별 패턴 |
+| Base64 시크릿 | `password=dXNlcjpwYXNz` 같은 Base64 인코딩된 민감 값 |
 | 이메일+비밀번호 | `email:password` 조합 |
 | JWT 토큰 | `eyJ...` 형식 |
-| 접속 문자열 | JDBC, MongoDB, PostgreSQL URI 등 |
-| 파일 경로 | `/etc/passwd`, `/home/` 등 민감 경로 |
+| 접속 문자열 | JDBC, MongoDB, PostgreSQL, MySQL, Redis URI 등 |
+| 파일 경로 | `/etc/passwd`, `.env`, `.ssh/`, `id_rsa` 등 민감 경로 |
 | 사용자 정의 | 직접 작성한 정규식 패턴 |
 
 ---
@@ -103,4 +106,4 @@ open .build/Perth.app
 ## 요구사항
 
 - macOS 14.0+
-- Swift 5.9+
+- Swift 6.0+
