@@ -43,6 +43,15 @@ struct AlertListView: View {
                     .fontWeight(.semibold)
                 Spacer()
                 if !alerts.isEmpty {
+                    Button(action: { exportAlerts(alerts) }) {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 10))
+                    }
+                    .font(.caption)
+                    .buttonStyle(.plain)
+                    .foregroundColor(.secondary)
+                    .help("JSON으로 내보내기")
+
                     Button(action: onClearClipboard) {
                         HStack(spacing: 3) {
                             Image(systemName: "clipboard")
@@ -340,4 +349,33 @@ struct SeverityBadge: View {
         case .low: return .yellow
         }
     }
+}
+
+private func exportAlerts(_ alerts: [SensitiveDataMatch]) {
+    let formatter = ISO8601DateFormatter()
+    let entries: [[String: String]] = alerts.map { alert in
+        [
+            "type": alert.patternType.rawValue,
+            "severity": alert.severity.rawValue,
+            "snippet": alert.matchedSnippet,
+            "timestamp": formatter.string(from: alert.timestamp),
+        ]
+    }
+    guard let data = try? JSONSerialization.data(withJSONObject: entries, options: .prettyPrinted),
+          let json = String(data: data, encoding: .utf8) else { return }
+
+    let panel = NSSavePanel()
+    panel.nameFieldStringValue = "perth-alerts-\(formattedDate()).json"
+    panel.allowedContentTypes = [.json]
+    panel.begin { response in
+        if response == .OK, let url = panel.url {
+            try? json.write(to: url, atomically: true, encoding: .utf8)
+        }
+    }
+}
+
+private func formattedDate() -> String {
+    let f = DateFormatter()
+    f.dateFormat = "yyyy-MM-dd"
+    return f.string(from: Date())
 }
