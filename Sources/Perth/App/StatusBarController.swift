@@ -30,12 +30,19 @@ class StatusBarController {
             button.target = self
         }
 
-        // Update icon when pet state or character changes
+        // Update icon when pet state, character, or today's count changes
         petStateManager.$state
-            .combineLatest(petStateManager.$character)
+            .combineLatest(petStateManager.$character, monitor.stats.$dailyStats)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _, _ in
-                self?.statusItem.button?.title = petStateManager.currentEmoji
+            .sink { [weak self] _, _, _ in
+                guard let self = self else { return }
+                let emoji = petStateManager.currentEmoji
+                let todayCount = monitor.stats.todayCount
+                if todayCount > 0 {
+                    self.statusItem.button?.title = "\(emoji)\(todayCount)"
+                } else {
+                    self.statusItem.button?.title = emoji
+                }
             }
             .store(in: &cancellables)
     }
@@ -44,6 +51,13 @@ class StatusBarController {
         if popover.isShown {
             popover.performClose(nil)
         } else if let button = statusItem.button {
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            NSApp.activate(ignoringOtherApps: true)
+        }
+    }
+
+    func showPopover() {
+        if let button = statusItem.button {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             NSApp.activate(ignoringOtherApps: true)
         }

@@ -30,6 +30,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             screenShareDetector: screenShareDetector
         )
 
+        notifier.onNotificationClicked = { [weak self] in
+            self?.statusBarController.showPopover()
+        }
+
         shortcutHandler = KeyboardShortcutHandler()
         shortcutHandler.register(settings: settings, petStateManager: petStateManager)
 

@@ -1,18 +1,20 @@
 import AppKit
 import UserNotifications
 
-class AlertNotifier: NSObject {
+class AlertNotifier: NSObject, UNUserNotificationCenterDelegate {
     private var lastNotificationTime: Date = .distantPast
     private let cooldown: TimeInterval = 10
     private var useModernAPI = false
+    var onNotificationClicked: (() -> Void)?
 
     override init() {
         super.init()
-        // UNUserNotificationCenter requires a valid .app bundle
         if Bundle.main.bundleIdentifier != nil,
            Bundle.main.bundlePath.hasSuffix(".app") {
             useModernAPI = true
-            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+            let center = UNUserNotificationCenter.current()
+            center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
+            center.delegate = self
         }
     }
 
@@ -52,6 +54,24 @@ class AlertNotifier: NSObject {
             trigger: nil
         )
         UNUserNotificationCenter.current().add(request)
+    }
+
+    // MARK: - UNUserNotificationCenterDelegate (notification click)
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                didReceive response: UNNotificationResponse,
+                                withCompletionHandler completionHandler: @escaping () -> Void) {
+        DispatchQueue.main.async { [weak self] in
+            self?.onNotificationClicked?()
+        }
+        completionHandler()
+    }
+
+    // Show notification even when app is in foreground
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .sound])
     }
 
     // MARK: - Legacy API (NSUserNotification, for swift run without bundle)
