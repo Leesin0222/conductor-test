@@ -8,7 +8,7 @@ let package = Package(
         .executableTarget(
             name: "Perth",
             path: "Sources/Perth",
-            exclude: ["Resources/Info.plist"],
+            exclude: ["Resources"],
             linkerSettings: [
                 .unsafeFlags(["-Xlinker", "-sectcreate",
                               "-Xlinker", "__TEXT",

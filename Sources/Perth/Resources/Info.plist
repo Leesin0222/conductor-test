@@ -14,6 +14,8 @@
     <string>1.0.0</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
+    <key>CFBundleIconFile</key>
+    <string>Perth</string>
     <key>LSUIElement</key>
     <true/>
 </dict>
