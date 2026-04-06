@@ -9,6 +9,8 @@ enum PatternType: String, CaseIterable, Identifiable {
     case emailPassword = "이메일+비밀번호"
     case jwt = "JWT 토큰"
     case connectionString = "접속 문자열"
+    case filePath = "파일 경로"
+    case custom = "사용자 정의"
 
     var id: String { rawValue }
 
@@ -22,6 +24,8 @@ enum PatternType: String, CaseIterable, Identifiable {
         case .emailPassword: return "envelope.badge.shield.half.filled.fill"
         case .jwt: return "ticket.fill"
         case .connectionString: return "server.rack"
+        case .filePath: return "doc.fill"
+        case .custom: return "star.fill"
         }
     }
 
@@ -29,7 +33,8 @@ enum PatternType: String, CaseIterable, Identifiable {
         switch self {
         case .koreanRRN, .privateKey, .creditCard: return .high
         case .apiKey, .password, .connectionString: return .medium
-        case .emailPassword, .jwt: return .medium
+        case .emailPassword, .jwt, .filePath: return .medium
+        case .custom: return .medium
         }
     }
 }
@@ -56,8 +61,16 @@ struct SensitiveDataMatch: Identifiable {
     let patternType: PatternType
     let matchedSnippet: String
     let timestamp: Date
+    var customPatternName: String?
 
     var severity: Severity { patternType.severity }
+
+    var displayName: String {
+        if let name = customPatternName {
+            return "\(patternType.rawValue): \(name)"
+        }
+        return patternType.rawValue
+    }
 
     static func redact(_ text: String) -> String {
         guard text.count > 8 else {

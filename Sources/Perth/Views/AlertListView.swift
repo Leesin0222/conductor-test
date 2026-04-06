@@ -3,6 +3,7 @@ import SwiftUI
 struct AlertListView: View {
     let alerts: [SensitiveDataMatch]
     let onClear: () -> Void
+    let onClearClipboard: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -12,6 +13,17 @@ struct AlertListView: View {
                     .fontWeight(.semibold)
                 Spacer()
                 if !alerts.isEmpty {
+                    Button(action: onClearClipboard) {
+                        HStack(spacing: 3) {
+                            Image(systemName: "clipboard")
+                                .font(.system(size: 10))
+                            Text("클립보드 비우기")
+                        }
+                    }
+                    .font(.caption)
+                    .buttonStyle(.plain)
+                    .foregroundColor(.red)
+
                     Button("모두 지우기", action: onClear)
                         .font(.caption)
                         .buttonStyle(.plain)
@@ -38,7 +50,7 @@ struct AlertListView: View {
                 ScrollView {
                     LazyVStack(spacing: 4) {
                         ForEach(alerts) { alert in
-                            AlertRow(alert: alert)
+                            AlertRow(alert: alert, onClearClipboard: onClearClipboard)
                         }
                     }
                     .padding(.horizontal, 8)
@@ -51,6 +63,7 @@ struct AlertListView: View {
 
 struct AlertRow: View {
     let alert: SensitiveDataMatch
+    let onClearClipboard: () -> Void
 
     var body: some View {
         HStack(spacing: 8) {
@@ -60,7 +73,7 @@ struct AlertRow: View {
                 .frame(width: 24)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(alert.patternType.rawValue)
+                Text(alert.displayName)
                     .font(.system(size: 12, weight: .semibold))
                 Text(alert.matchedSnippet)
                     .font(.system(size: 10, design: .monospaced))
@@ -69,6 +82,14 @@ struct AlertRow: View {
             }
 
             Spacer()
+
+            Button(action: onClearClipboard) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
+            }
+            .buttonStyle(.plain)
+            .help("클립보드 비우기")
 
             Text(timeAgo(alert.timestamp))
                 .font(.system(size: 10))
