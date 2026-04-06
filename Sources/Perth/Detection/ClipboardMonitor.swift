@@ -46,6 +46,10 @@ class ClipboardMonitor: ObservableObject {
         recentAlerts.removeAll()
     }
 
+    func deleteAlert(_ alert: SensitiveDataMatch) {
+        recentAlerts.removeAll { $0.id == alert.id }
+    }
+
     func clearClipboard() {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString("", forType: .string)

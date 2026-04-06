@@ -67,7 +67,8 @@ struct PopoverView: View {
                         AlertListView(
                             alerts: monitor.recentAlerts,
                             onClear: { monitor.clearAlerts() },
-                            onClearClipboard: { monitor.clearClipboard() }
+                            onClearClipboard: { monitor.clearClipboard() },
+                            onDelete: { alert in monitor.deleteAlert(alert) }
                         )
                     case .history:
                         HistoryView(historyManager: monitor.historyManager)
