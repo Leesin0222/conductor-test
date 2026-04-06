@@ -15,6 +15,10 @@ class ClipboardMonitor: ObservableObject {
     private var timer: Timer?
     private var autoClearTimer: Timer?
     private var lastChangeCount: Int = 0
+    private let alertsKey = "recentAlerts"
+    private var todayCutoff: Date {
+        Calendar.current.startOfDay(for: Date())
+    }
 
     init(detector: SensitiveDataDetector, petStateManager: PetStateManager,
          notifier: AlertNotifier, settings: AppSettings) {
@@ -26,10 +30,12 @@ class ClipboardMonitor: ObservableObject {
         self.historyManager = ClipboardHistoryManager()
         self.stats = DetectionStats()
         self.lastChangeCount = NSPasteboard.general.changeCount
+        loadAlerts()
     }
 
     func startMonitoring() {
         stopMonitoring()
+        historyManager.pruneExpired()
         timer = Timer.scheduledTimer(withTimeInterval: settings.checkInterval, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated {
                 self?.checkClipboard()
@@ -44,10 +50,24 @@ class ClipboardMonitor: ObservableObject {
 
     func clearAlerts() {
         recentAlerts.removeAll()
+        saveAlerts()
     }
 
     func deleteAlert(_ alert: SensitiveDataMatch) {
         recentAlerts.removeAll { $0.id == alert.id }
+        saveAlerts()
+    }
+
+    private func saveAlerts() {
+        if let data = try? JSONEncoder().encode(recentAlerts) {
+            UserDefaults.standard.set(data, forKey: alertsKey)
+        }
+    }
+
+    private func loadAlerts() {
+        guard let data = UserDefaults.standard.data(forKey: alertsKey),
+              let loaded = try? JSONDecoder().decode([SensitiveDataMatch].self, from: data) else { return }
+        recentAlerts = loaded.filter { $0.timestamp >= todayCutoff }
     }
 
     func clearClipboard() {
@@ -81,6 +101,7 @@ class ClipboardMonitor: ObservableObject {
         if recentAlerts.count > 50 {
             recentAlerts = Array(recentAlerts.prefix(50))
         }
+        saveAlerts()
         petStateManager.triggerAlert()
         safetyStreak.recordAlert()
         historyManager.record(patterns: patternTypes)

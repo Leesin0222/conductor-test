@@ -1,6 +1,6 @@
 import Foundation
 
-enum PatternType: String, CaseIterable, Identifiable {
+enum PatternType: String, CaseIterable, Identifiable, Codable {
     case apiKey = "API 키"
     case password = "비밀번호"
     case privateKey = "개인 키"
@@ -64,12 +64,20 @@ enum Severity: String, Comparable {
     }
 }
 
-struct SensitiveDataMatch: Identifiable {
-    let id = UUID()
+struct SensitiveDataMatch: Identifiable, Codable {
+    let id: UUID
     let patternType: PatternType
     let matchedSnippet: String
     let timestamp: Date
     var customPatternName: String?
+
+    init(patternType: PatternType, matchedSnippet: String, timestamp: Date, customPatternName: String? = nil) {
+        self.id = UUID()
+        self.patternType = patternType
+        self.matchedSnippet = matchedSnippet
+        self.timestamp = timestamp
+        self.customPatternName = customPatternName
+    }
 
     var severity: Severity { patternType.severity }
 
