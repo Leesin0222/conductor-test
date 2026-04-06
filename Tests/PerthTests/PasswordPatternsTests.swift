@@ -10,12 +10,11 @@ struct PasswordPatternsTests {
     // full text contains "password" (i.e. password=... and PASSWORD=...) is filtered
     // out by the implementation. Only passwd= and pwd= are reliably detected.
 
-    @Test("password= is filtered because matched text contains the word 'password'")
-    func passwordEqualsIsFilteredByExcludeList() {
-        // The implementation filters matches whose text contains an excludeValue.
-        // "password" is in excludeValues, so password=hunter2 is filtered out.
+    @Test("detects password= assignment")
+    func detectsPasswordEqualsValue() {
         let matches = detector.detect(in: "password=hunter2")
-        #expect(matches.isEmpty)
+        #expect(!matches.isEmpty)
+        #expect(matches.allSatisfy { $0.patternType == .password })
     }
 
     @Test("detects passwd= assignment")
@@ -43,35 +42,23 @@ struct PasswordPatternsTests {
         #expect(!matches.isEmpty)
     }
 
-    @Test("quoted password= is also filtered because matched text contains 'password'")
-    func quotedPasswordIsFiltered() {
+    @Test("detects quoted password= assignment")
+    func detectsQuotedPasswordEquals() {
         let matches = detector.detect(in: #"password="myRealPassword""#)
-        #expect(matches.isEmpty)
+        #expect(!matches.isEmpty)
     }
 
     // MARK: - Placeholder exclusions
 
     @Test("excludes placeholder value 'xxx'")
     func doesNotDetectPasswordEqualsXxx() {
-        let matches = detector.detect(in: "password=xxx")
-        #expect(matches.isEmpty)
-    }
-
-    @Test("excludes placeholder value 'null'")
-    func doesNotDetectPasswordEqualsNull() {
-        let matches = detector.detect(in: "password=null")
+        let matches = detector.detect(in: "passwd=xxx")
         #expect(matches.isEmpty)
     }
 
     @Test("excludes ${...} template placeholder")
     func doesNotDetectPasswordWithDollarBracePlaceholder() {
         let matches = detector.detect(in: "password=${MY_PASSWORD}")
-        #expect(matches.isEmpty)
-    }
-
-    @Test("excludes 'changeme' placeholder")
-    func doesNotDetectPasswordEqualsChangeme() {
-        let matches = detector.detect(in: "password=changeme")
         #expect(matches.isEmpty)
     }
 
@@ -99,6 +86,72 @@ struct PasswordPatternsTests {
         #expect(matches.isEmpty)
     }
 
+    // MARK: - Additional keywords (pw, pass, Korean)
+
+    @Test("detects pw= assignment")
+    func detectsPwEqualsValue() {
+        let matches = detector.detect(in: "pw=mysecret123")
+        #expect(!matches.isEmpty)
+    }
+
+    @Test("detects pass= assignment")
+    func detectsPassEqualsValue() {
+        let matches = detector.detect(in: "pass=mysecret123")
+        #expect(!matches.isEmpty)
+    }
+
+    @Test("detects 비밀번호= assignment")
+    func detectsKoreanPasswordEquals() {
+        let matches = detector.detect(in: "비밀번호=mySecret123")
+        #expect(!matches.isEmpty)
+    }
+
+    @Test("detects 비번= assignment")
+    func detectsKoreanShortPasswordEquals() {
+        let matches = detector.detect(in: "비번=mySecret123")
+        #expect(!matches.isEmpty)
+    }
+
+    @Test("detects 패스워드= assignment")
+    func detectsKoreanLoanwordPasswordEquals() {
+        let matches = detector.detect(in: "패스워드=mySecret123")
+        #expect(!matches.isEmpty)
+    }
+
+    @Test("detects 비밀번호: with colon separator")
+    func detectsKoreanPasswordColon() {
+        let matches = detector.detect(in: "비밀번호: mySecret123")
+        #expect(!matches.isEmpty)
+    }
+
+    // MARK: - Space separator
+
+    @Test("detects password with space separator")
+    func detectsPasswordWithSpaceSeparator() {
+        let matches = detector.detect(in: "password mySecret123")
+        #expect(!matches.isEmpty)
+    }
+
+    @Test("detects 비밀번호 with space separator")
+    func detectsKoreanPasswordWithSpaceSeparator() {
+        let matches = detector.detect(in: "비밀번호 mySecret123")
+        #expect(!matches.isEmpty)
+    }
+
+    // MARK: - Placeholder exclusions (value-only check)
+
+    @Test("excludes placeholder value 'changeme' even with password= prefix")
+    func excludesChangemeWithPasswordPrefix() {
+        let matches = detector.detect(in: "password=changeme")
+        #expect(matches.isEmpty)
+    }
+
+    @Test("excludes placeholder value 'null'")
+    func excludesNullValue() {
+        let matches = detector.detect(in: "passwd=null")
+        #expect(matches.isEmpty)
+    }
+
     // MARK: - Edge cases
 
     @Test("empty input returns no matches")
@@ -106,11 +159,10 @@ struct PasswordPatternsTests {
         #expect(detector.detect(in: "").isEmpty)
     }
 
-    @Test("PASSWORD= is also filtered because lowercased match contains 'password'")
-    func passwordKeywordCaseInsensitiveIsFiltered() {
-        // PASSWORD= lowercases to "password=..." which contains "password" in excludeValues
+    @Test("detects PASSWORD= case-insensitively")
+    func detectsPasswordUppercase() {
         let matches = detector.detect(in: "PASSWORD=realSecret1")
-        #expect(matches.isEmpty)
+        #expect(!matches.isEmpty)
     }
 
     @Test("PASSWD= is detected case-insensitively")
