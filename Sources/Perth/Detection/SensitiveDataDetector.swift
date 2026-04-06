@@ -12,6 +12,8 @@ class SensitiveDataDetector {
         JWTPatterns(),
         ConnectionStringPatterns(),
         FilePathPatterns(),
+        PhoneNumberPatterns(),
+        BankAccountPatterns(),
     ]
 
     var customPatternManager: CustomPatternManager?

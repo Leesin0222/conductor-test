@@ -15,6 +15,7 @@ struct APIKeyPatterns: PatternDefinition {
         #"sk-[A-Za-z0-9]{20}T3BlbkFJ[A-Za-z0-9]{20}"#, // OpenAI Key
         #"sk-(?:proj-)?[A-Za-z0-9_\-]{40,}"#,           // OpenAI newer format
         #"(?:api[_\-]?key|apikey)\s*[:=]\s*['"]?[A-Za-z0-9_\-]{16,}['"]?"#,
+        #"(?:aws[_\-]?secret[_\-]?(?:access[_\-]?)?key|secret[_\-]?access[_\-]?key)\s*[:=]\s*['"]?[A-Za-z0-9/+=]{40}['"]?"#,
     ]
 
     func detect(in text: String) -> [SensitiveDataMatch] {

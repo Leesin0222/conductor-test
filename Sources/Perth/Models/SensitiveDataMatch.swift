@@ -10,6 +10,8 @@ enum PatternType: String, CaseIterable, Identifiable {
     case jwt = "JWT 토큰"
     case connectionString = "접속 문자열"
     case filePath = "파일 경로"
+    case phoneNumber = "전화번호"
+    case bankAccount = "계좌번호"
     case custom = "사용자 정의"
 
     var id: String { rawValue }
@@ -25,6 +27,8 @@ enum PatternType: String, CaseIterable, Identifiable {
         case .jwt: return "ticket.fill"
         case .connectionString: return "server.rack"
         case .filePath: return "doc.fill"
+        case .phoneNumber: return "phone.fill"
+        case .bankAccount: return "banknote.fill"
         case .custom: return "star.fill"
         }
     }
@@ -34,6 +38,7 @@ enum PatternType: String, CaseIterable, Identifiable {
         case .koreanRRN, .privateKey, .creditCard: return .high
         case .apiKey, .password, .connectionString: return .medium
         case .emailPassword, .jwt, .filePath: return .medium
+        case .phoneNumber, .bankAccount: return .high
         case .custom: return .medium
         }
     }
