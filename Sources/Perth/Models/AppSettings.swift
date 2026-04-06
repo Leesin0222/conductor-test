@@ -73,8 +73,8 @@ class AppSettings: ObservableObject {
         self.launchAtLogin = defaults.bool(forKey: "launchAtLogin")
         self.hasCompletedOnboarding = defaults.bool(forKey: "hasCompletedOnboarding")
         self.excludedApps = defaults.stringArray(forKey: "excludedApps") ?? [
-            "com.1password", "com.agilebits.onepassword",
-            "org.keepassxc.keepassxc",
+            "com.apple.keychainaccess",  // 키체인 접근
+            "com.apple.Passwords",       // 암호 앱 (macOS Sequoia+)
         ]
 
         if let raw = defaults.string(forKey: "alertSoundMode"),
