@@ -1,6 +1,6 @@
 import Foundation
 
-enum PatternType: String, CaseIterable, Identifiable {
+enum PatternType: String, CaseIterable, Identifiable, Codable {
     case apiKey = "API 키"
     case password = "비밀번호"
     case privateKey = "개인 키"
@@ -10,6 +10,9 @@ enum PatternType: String, CaseIterable, Identifiable {
     case jwt = "JWT 토큰"
     case connectionString = "접속 문자열"
     case filePath = "파일 경로"
+    case phoneNumber = "전화번호"
+    case bankAccount = "계좌번호"
+    case base64Secret = "Base64 시크릿"
     case custom = "사용자 정의"
 
     var id: String { rawValue }
@@ -25,6 +28,9 @@ enum PatternType: String, CaseIterable, Identifiable {
         case .jwt: return "ticket.fill"
         case .connectionString: return "server.rack"
         case .filePath: return "doc.fill"
+        case .phoneNumber: return "phone.fill"
+        case .bankAccount: return "banknote.fill"
+        case .base64Secret: return "lock.doc.fill"
         case .custom: return "star.fill"
         }
     }
@@ -34,6 +40,8 @@ enum PatternType: String, CaseIterable, Identifiable {
         case .koreanRRN, .privateKey, .creditCard: return .high
         case .apiKey, .password, .connectionString: return .medium
         case .emailPassword, .jwt, .filePath: return .medium
+        case .phoneNumber, .bankAccount: return .high
+        case .base64Secret: return .medium
         case .custom: return .medium
         }
     }
@@ -56,12 +64,20 @@ enum Severity: String, Comparable {
     }
 }
 
-struct SensitiveDataMatch: Identifiable {
-    let id = UUID()
+struct SensitiveDataMatch: Identifiable, Codable {
+    let id: UUID
     let patternType: PatternType
     let matchedSnippet: String
     let timestamp: Date
     var customPatternName: String?
+
+    init(patternType: PatternType, matchedSnippet: String, timestamp: Date, customPatternName: String? = nil) {
+        self.id = UUID()
+        self.patternType = patternType
+        self.matchedSnippet = matchedSnippet
+        self.timestamp = timestamp
+        self.customPatternName = customPatternName
+    }
 
     var severity: Severity { patternType.severity }
 

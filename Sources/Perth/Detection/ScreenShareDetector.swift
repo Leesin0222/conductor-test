@@ -1,13 +1,16 @@
 import AppKit
 import CoreGraphics
 
+@MainActor
 class ScreenShareDetector: ObservableObject {
     @Published var isScreenBeingShared = false
     private var timer: Timer?
 
     func startMonitoring() {
         timer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
-            self?.check()
+            MainActor.assumeIsolated {
+                self?.check()
+            }
         }
         check()
     }
@@ -18,15 +21,10 @@ class ScreenShareDetector: ObservableObject {
     }
 
     private func check() {
-        // Check if any screen recording/sharing sessions are active
-        // CGWindowListCopyWindowInfo can detect screen capture overlays
-        let sharing = isScreenCaptureActive()
-        DispatchQueue.main.async {
-            self.isScreenBeingShared = sharing
-        }
+        isScreenBeingShared = isScreenCaptureActive()
     }
 
-    private func isScreenCaptureActive() -> Bool {
+    private nonisolated func isScreenCaptureActive() -> Bool {
         guard let windowList = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as? [[String: Any]] else {
             return false
         }

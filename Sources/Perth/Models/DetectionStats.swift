@@ -8,6 +8,7 @@ struct DailyStat: Identifiable {
     var byType: [PatternType: Int]
 }
 
+@MainActor
 class DetectionStats: ObservableObject {
     @Published var dailyStats: [DailyStat] = []
 

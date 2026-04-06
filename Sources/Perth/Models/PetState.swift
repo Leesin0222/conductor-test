@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 
-enum PetCharacter: String, CaseIterable, Identifiable {
+enum PetCharacter: String, CaseIterable, Identifiable, Sendable {
     case cat, dog, rabbit, bear
 
     var id: String { rawValue }
@@ -37,7 +37,7 @@ enum PetCharacter: String, CaseIterable, Identifiable {
     }
 }
 
-enum PetState: String, CaseIterable {
+enum PetState: String, CaseIterable, Sendable {
     case happy
     case sleeping
     case alert
@@ -62,6 +62,7 @@ enum PetState: String, CaseIterable {
     }
 }
 
+@MainActor
 class PetStateManager: ObservableObject {
     @Published var state: PetState = .happy
     @Published var character: PetCharacter {
@@ -88,7 +89,7 @@ class PetStateManager: ObservableObject {
         state = .alert
         cooldownTimer?.invalidate()
         cooldownTimer = Timer.scheduledTimer(withTimeInterval: 15.0, repeats: false) { [weak self] _ in
-            DispatchQueue.main.async {
+            MainActor.assumeIsolated {
                 self?.updateForTimeOfDay()
             }
         }
@@ -106,7 +107,7 @@ class PetStateManager: ObservableObject {
     private func startTimeOfDayUpdates() {
         updateForTimeOfDay()
         timeOfDayTimer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { [weak self] _ in
-            DispatchQueue.main.async {
+            MainActor.assumeIsolated {
                 guard let self = self, self.state != .alert else { return }
                 self.updateForTimeOfDay()
             }

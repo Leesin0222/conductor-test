@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 class SensitiveDataDetector {
     private let allPatterns: [PatternDefinition] = [
         APIKeyPatterns(),
@@ -11,6 +12,9 @@ class SensitiveDataDetector {
         JWTPatterns(),
         ConnectionStringPatterns(),
         FilePathPatterns(),
+        PhoneNumberPatterns(),
+        BankAccountPatterns(),
+        Base64SecretPatterns(),
     ]
 
     var customPatternManager: CustomPatternManager?

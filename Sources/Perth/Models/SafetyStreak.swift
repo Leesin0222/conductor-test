@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 
+@MainActor
 class SafetyStreak: ObservableObject {
     @Published private(set) var currentStreakDays: Int = 0
     @Published private(set) var lastAlertDate: Date?
