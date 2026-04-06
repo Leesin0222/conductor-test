@@ -7,7 +7,7 @@ protocol PatternDefinition {
 
 extension PatternDefinition {
     func matchesForRegex(_ pattern: String, in text: String, options: NSRegularExpression.Options = [.caseInsensitive]) -> [String] {
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: options) else {
+        guard let regex = RegexCache.shared.regex(for: pattern, options: options) else {
             return []
         }
         let range = NSRange(text.startIndex..., in: text)
@@ -25,5 +25,30 @@ extension PatternDefinition {
                 timestamp: Date()
             )
         }
+    }
+}
+
+final class RegexCache: @unchecked Sendable {
+    static let shared = RegexCache()
+
+    private var cache: [String: NSRegularExpression] = [:]
+    private let lock = NSLock()
+
+    private init() {}
+
+    func regex(for pattern: String, options: NSRegularExpression.Options = []) -> NSRegularExpression? {
+        let key = "\(pattern)|\(options.rawValue)"
+        lock.lock()
+        defer { lock.unlock() }
+
+        if let cached = cache[key] {
+            return cached
+        }
+
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: options) else {
+            return nil
+        }
+        cache[key] = regex
+        return regex
     }
 }
