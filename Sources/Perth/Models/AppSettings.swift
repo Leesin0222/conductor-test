@@ -53,6 +53,14 @@ class AppSettings: ObservableObject {
         didSet { UserDefaults.standard.set(hasCompletedOnboarding, forKey: "hasCompletedOnboarding") }
     }
 
+    @Published var petWakeHour: Int {
+        didSet { UserDefaults.standard.set(petWakeHour, forKey: "petWakeHour") }
+    }
+
+    @Published var petSleepHour: Int {
+        didSet { UserDefaults.standard.set(petSleepHour, forKey: "petSleepHour") }
+    }
+
     private init() {
         let defaults = UserDefaults.standard
 
@@ -72,9 +80,18 @@ class AppSettings: ObservableObject {
         self.autoClearDelay = defaults.double(forKey: "autoClearDelay")
         self.launchAtLogin = defaults.bool(forKey: "launchAtLogin")
         self.hasCompletedOnboarding = defaults.bool(forKey: "hasCompletedOnboarding")
+
+        if defaults.object(forKey: "petWakeHour") == nil {
+            defaults.set(6, forKey: "petWakeHour")
+        }
+        if defaults.object(forKey: "petSleepHour") == nil {
+            defaults.set(23, forKey: "petSleepHour")
+        }
+        self.petWakeHour = defaults.integer(forKey: "petWakeHour")
+        self.petSleepHour = defaults.integer(forKey: "petSleepHour")
         self.excludedApps = defaults.stringArray(forKey: "excludedApps") ?? [
-            "com.1password", "com.agilebits.onepassword",
-            "org.keepassxc.keepassxc",
+            "com.apple.keychainaccess",  // 키체인 접근
+            "com.apple.Passwords",       // 암호 앱 (macOS Sequoia+)
         ]
 
         if let raw = defaults.string(forKey: "alertSoundMode"),

@@ -2,35 +2,77 @@ import SwiftUI
 
 struct HistoryView: View {
     @ObservedObject var historyManager: ClipboardHistoryManager
+    @State private var searchText: String = ""
+
+    private var filteredEntries: [ClipboardEntry] {
+        guard !searchText.isEmpty else { return historyManager.entries }
+        let query = searchText.lowercased()
+        return historyManager.entries.filter { entry in
+            entry.sourceApp.lowercased().contains(query)
+            || entry.sourceBundleId.lowercased().contains(query)
+            || entry.detectedPatterns.contains(where: { $0.rawValue.lowercased().contains(query) })
+        }
+    }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 8) {
+        VStack(spacing: 0) {
+            HStack {
                 Text("클립보드 히스토리")
                     .font(.headline)
                     .fontWeight(.semibold)
-                    .padding(.horizontal, 12)
-                    .padding(.top, 8)
+                Spacer()
+                Text("\(filteredEntries.count)건")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.top, 8)
+            .padding(.bottom, 4)
 
-                if historyManager.entries.isEmpty {
-                    VStack(spacing: 8) {
-                        Spacer()
-                        Image(systemName: "clock")
-                            .font(.system(size: 28))
+            // Search bar
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                TextField("앱 이름, 패턴 유형 검색", text: $searchText)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 12))
+                if !searchText.isEmpty {
+                    Button(action: { searchText = "" }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 11))
                             .foregroundColor(.secondary)
-                        Text("아직 기록이 없어요")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        Spacer()
                     }
-                    .frame(maxWidth: .infinity, minHeight: 120)
-                } else {
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(RoundedRectangle(cornerRadius: 6).fill(Color(.controlBackgroundColor)))
+            .padding(.horizontal, 12)
+            .padding(.bottom, 4)
+
+            if filteredEntries.isEmpty {
+                VStack(spacing: 8) {
+                    Spacer()
+                    Image(systemName: searchText.isEmpty ? "clock" : "magnifyingglass")
+                        .font(.system(size: 28))
+                        .foregroundColor(.secondary)
+                    Text(searchText.isEmpty ? "아직 기록이 없어요" : "검색 결과가 없어요")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, minHeight: 120)
+            } else {
+                ScrollView {
                     LazyVStack(spacing: 4) {
-                        ForEach(historyManager.entries) { entry in
+                        ForEach(filteredEntries) { entry in
                             HistoryRow(entry: entry)
                         }
                     }
                     .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
                 }
             }
         }

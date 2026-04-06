@@ -89,6 +89,43 @@ struct SettingsView: View {
 
                 Divider()
 
+                // Pet schedule
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("펫 활동 시간")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+
+                    HStack {
+                        Text("기상")
+                            .font(.system(size: 12))
+                            .frame(width: 30)
+                        Picker("", selection: $settings.petWakeHour) {
+                            ForEach(0..<24, id: \.self) { hour in
+                                Text(String(format: "%02d:00", hour)).tag(hour)
+                            }
+                        }
+                        .frame(width: 80)
+
+                        Spacer().frame(width: 16)
+
+                        Text("취침")
+                            .font(.system(size: 12))
+                            .frame(width: 30)
+                        Picker("", selection: $settings.petSleepHour) {
+                            ForEach(0..<24, id: \.self) { hour in
+                                Text(String(format: "%02d:00", hour)).tag(hour)
+                            }
+                        }
+                        .frame(width: 80)
+                    }
+
+                    Text("현재: \(String(format: "%02d:00", settings.petWakeHour)) ~ \(String(format: "%02d:00", settings.petSleepHour)) 활동")
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                }
+
+                Divider()
+
                 // Patterns
                 Text("감지 패턴")
                     .font(.subheadline)

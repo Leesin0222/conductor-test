@@ -1,5 +1,34 @@
 import SwiftUI
 
+// Groups consecutive alerts of the same PatternType
+struct AlertGroup: Identifiable {
+    let id = UUID()
+    let patternType: PatternType
+    let alerts: [SensitiveDataMatch]
+
+    var count: Int { alerts.count }
+    var isGrouped: Bool { count > 1 }
+    var first: SensitiveDataMatch { alerts[0] }
+    var severity: Severity { patternType.severity }
+}
+
+private func groupAlerts(_ alerts: [SensitiveDataMatch]) -> [AlertGroup] {
+    guard !alerts.isEmpty else { return [] }
+    var groups: [AlertGroup] = []
+    var current: [SensitiveDataMatch] = [alerts[0]]
+
+    for i in 1..<alerts.count {
+        if alerts[i].patternType == current[0].patternType {
+            current.append(alerts[i])
+        } else {
+            groups.append(AlertGroup(patternType: current[0].patternType, alerts: current))
+            current = [alerts[i]]
+        }
+    }
+    groups.append(AlertGroup(patternType: current[0].patternType, alerts: current))
+    return groups
+}
+
 struct AlertListView: View {
     let alerts: [SensitiveDataMatch]
     let onClear: () -> Void
@@ -14,6 +43,15 @@ struct AlertListView: View {
                     .fontWeight(.semibold)
                 Spacer()
                 if !alerts.isEmpty {
+                    Button(action: { exportAlerts(alerts) }) {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 10))
+                    }
+                    .font(.caption)
+                    .buttonStyle(.plain)
+                    .foregroundColor(.secondary)
+                    .help("JSON으로 내보내기")
+
                     Button(action: onClearClipboard) {
                         HStack(spacing: 3) {
                             Image(systemName: "clipboard")
@@ -50,10 +88,12 @@ struct AlertListView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 4) {
-                        ForEach(alerts) { alert in
-                            AlertRow(alert: alert,
-                                     onClearClipboard: onClearClipboard,
-                                     onDelete: onDelete)
+                        ForEach(groupAlerts(alerts)) { group in
+                            if group.isGrouped {
+                                AlertGroupRow(group: group, onDelete: onDelete)
+                            } else {
+                                AlertRow(alert: group.first, onDelete: onDelete)
+                            }
                         }
                     }
                     .padding(.horizontal, 8)
@@ -64,14 +104,146 @@ struct AlertListView: View {
     }
 }
 
+struct AlertGroupRow: View {
+    let group: AlertGroup
+    var onDelete: ((SensitiveDataMatch) -> Void)?
+    @State private var isExpanded = false
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Group header
+            Button(action: { withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() } }) {
+                HStack(spacing: 8) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(severityColor)
+                        .frame(width: 3, height: 36)
+
+                    Image(systemName: group.patternType.icon)
+                        .font(.system(size: 14))
+                        .foregroundColor(severityColor)
+                        .frame(width: 24)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 4) {
+                            Text(group.patternType.rawValue)
+                                .font(.system(size: 12, weight: .semibold))
+                            SeverityBadge(severity: group.severity)
+                            Text("\(group.count)건")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 1)
+                                .background(Capsule().fill(severityColor.opacity(0.7)))
+                        }
+                        Text(group.first.matchedSnippet)
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+
+                    Text(timeAgo(group.first.timestamp))
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+            }
+            .buttonStyle(.plain)
+            .background(
+                RoundedRectangle(cornerRadius: isExpanded ? 0 : 8)
+                    .fill(severityColor.opacity(severityBackgroundOpacity))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: isExpanded ? 0 : 8)
+                    .stroke(severityColor.opacity(0.2), lineWidth: 1)
+            )
+
+            // Expanded items
+            if isExpanded {
+                VStack(spacing: 0) {
+                    ForEach(group.alerts) { alert in
+                        HStack(spacing: 8) {
+                            Spacer().frame(width: 3)
+                            Spacer().frame(width: 24)
+
+                            Text(alert.matchedSnippet)
+                                .font(.system(size: 10, design: .monospaced))
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
+
+                            Spacer()
+
+                            if let onDelete {
+                                Button {
+                                    onDelete(alert)
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.secondary)
+                                }
+                                .buttonStyle(.plain)
+                                .help("이 알림 삭제")
+                            }
+
+                            Text(timeAgo(alert.timestamp))
+                                .font(.system(size: 9))
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+
+                        if alert.id != group.alerts.last?.id {
+                            Divider().padding(.leading, 35)
+                        }
+                    }
+                }
+                .background(severityColor.opacity(0.04))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 0)
+                        .stroke(severityColor.opacity(0.2), lineWidth: 1)
+                )
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var severityColor: Color {
+        switch group.severity {
+        case .high: return .red
+        case .medium: return .orange
+        case .low: return .yellow
+        }
+    }
+
+    private var severityBackgroundOpacity: Double {
+        switch group.severity {
+        case .high: return 0.12
+        case .medium: return 0.08
+        case .low: return 0.06
+        }
+    }
+
+    private func timeAgo(_ date: Date) -> String {
+        let seconds = Int(-date.timeIntervalSinceNow)
+        if seconds < 60 { return "방금" }
+        if seconds < 3600 { return "\(seconds / 60)분 전" }
+        if seconds < 86400 { return "\(seconds / 3600)시간 전" }
+        return "\(seconds / 86400)일 전"
+    }
+}
+
 struct AlertRow: View {
     let alert: SensitiveDataMatch
-    let onClearClipboard: () -> Void
     var onDelete: ((SensitiveDataMatch) -> Void)?
 
     var body: some View {
         HStack(spacing: 8) {
-            // Severity indicator bar
             RoundedRectangle(cornerRadius: 2)
                 .fill(severityColor)
                 .frame(width: 3, height: 36)
@@ -177,4 +349,33 @@ struct SeverityBadge: View {
         case .low: return .yellow
         }
     }
+}
+
+private func exportAlerts(_ alerts: [SensitiveDataMatch]) {
+    let formatter = ISO8601DateFormatter()
+    let entries: [[String: String]] = alerts.map { alert in
+        [
+            "type": alert.patternType.rawValue,
+            "severity": alert.severity.rawValue,
+            "snippet": alert.matchedSnippet,
+            "timestamp": formatter.string(from: alert.timestamp),
+        ]
+    }
+    guard let data = try? JSONSerialization.data(withJSONObject: entries, options: .prettyPrinted),
+          let json = String(data: data, encoding: .utf8) else { return }
+
+    let panel = NSSavePanel()
+    panel.nameFieldStringValue = "perth-alerts-\(formattedDate()).json"
+    panel.allowedContentTypes = [.json]
+    panel.begin { response in
+        if response == .OK, let url = panel.url {
+            try? json.write(to: url, atomically: true, encoding: .utf8)
+        }
+    }
+}
+
+private func formattedDate() -> String {
+    let f = DateFormatter()
+    f.dateFormat = "yyyy-MM-dd"
+    return f.string(from: Date())
 }
