@@ -25,28 +25,17 @@ class StatusBarController {
         popover.contentViewController = NSHostingController(rootView: contentView)
 
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "shield.lefthalf.filled", accessibilityDescription: "Perth")
-            button.image?.isTemplate = true
+            button.title = petStateManager.currentEmoji
             button.action = #selector(togglePopover)
             button.target = self
         }
 
-        // Update icon when alert is active
+        // Update icon when pet state or character changes
         petStateManager.$state
+            .combineLatest(petStateManager.$character)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] state in
-                guard let button = self?.statusItem.button else { return }
-                switch state {
-                case .alert:
-                    button.image = NSImage(systemSymbolName: "shield.lefthalf.filled.trianglebadge.exclamationmark", accessibilityDescription: "Alert")
-                    button.image?.isTemplate = true
-                case .sleeping:
-                    button.image = NSImage(systemSymbolName: "shield.slash", accessibilityDescription: "Sleeping")
-                    button.image?.isTemplate = true
-                default:
-                    button.image = NSImage(systemSymbolName: "shield.lefthalf.filled", accessibilityDescription: "Perth")
-                    button.image?.isTemplate = true
-                }
+            .sink { [weak self] _, _ in
+                self?.statusItem.button?.title = petStateManager.currentEmoji
             }
             .store(in: &cancellables)
     }
