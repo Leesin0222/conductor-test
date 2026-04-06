@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 class SensitiveDataDetector {
     private let allPatterns: [PatternDefinition] = [
         APIKeyPatterns(),

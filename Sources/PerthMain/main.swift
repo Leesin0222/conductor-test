@@ -1,0 +1,3 @@
+import PerthCore
+
+runApplication()

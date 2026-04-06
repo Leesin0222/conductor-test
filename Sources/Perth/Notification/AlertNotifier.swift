@@ -1,7 +1,8 @@
 import AppKit
 import UserNotifications
 
-class AlertNotifier: NSObject, UNUserNotificationCenterDelegate {
+@MainActor
+class AlertNotifier: NSObject, @preconcurrency UNUserNotificationCenterDelegate {
     private var lastNotificationTime: Date = .distantPast
     private let cooldown: TimeInterval = 10
     private var useModernAPI = false

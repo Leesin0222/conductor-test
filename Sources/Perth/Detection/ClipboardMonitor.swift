@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 
+@MainActor
 class ClipboardMonitor: ObservableObject {
     @Published var recentAlerts: [SensitiveDataMatch] = []
 
@@ -30,7 +31,9 @@ class ClipboardMonitor: ObservableObject {
     func startMonitoring() {
         stopMonitoring()
         timer = Timer.scheduledTimer(withTimeInterval: settings.checkInterval, repeats: true) { [weak self] _ in
-            self?.checkClipboard()
+            MainActor.assumeIsolated {
+                self?.checkClipboard()
+            }
         }
     }
 
@@ -56,7 +59,6 @@ class ClipboardMonitor: ObservableObject {
         guard currentCount != lastChangeCount else { return }
         lastChangeCount = currentCount
 
-        // Check if the frontmost app is in the excluded list
         if let bundleId = NSWorkspace.shared.frontmostApplication?.bundleIdentifier {
             if settings.excludedApps.contains(where: { bundleId.lowercased().contains($0.lowercased()) }) {
                 return
@@ -71,27 +73,23 @@ class ClipboardMonitor: ObservableObject {
 
         let patternTypes = matches.map { $0.patternType }
 
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            self.recentAlerts.insert(contentsOf: matches, at: 0)
-            if self.recentAlerts.count > 50 {
-                self.recentAlerts = Array(self.recentAlerts.prefix(50))
-            }
-            self.petStateManager.triggerAlert()
-            self.safetyStreak.recordAlert()
-            self.historyManager.record(patterns: patternTypes)
-            self.stats.record(patterns: matches)
+        recentAlerts.insert(contentsOf: matches, at: 0)
+        if recentAlerts.count > 50 {
+            recentAlerts = Array(recentAlerts.prefix(50))
         }
+        petStateManager.triggerAlert()
+        safetyStreak.recordAlert()
+        historyManager.record(patterns: patternTypes)
+        stats.record(patterns: matches)
 
         if let topMatch = matches.max(by: { $0.severity < $1.severity }) {
             notifier.sendAlert(match: topMatch, settings: settings)
         }
 
-        // Auto-clear clipboard if enabled
         if settings.autoClearEnabled {
             autoClearTimer?.invalidate()
             autoClearTimer = Timer.scheduledTimer(withTimeInterval: settings.autoClearDelay, repeats: false) { [weak self] _ in
-                DispatchQueue.main.async {
+                MainActor.assumeIsolated {
                     self?.clearClipboard()
                 }
             }

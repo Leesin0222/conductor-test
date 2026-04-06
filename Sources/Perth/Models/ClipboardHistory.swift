@@ -1,7 +1,7 @@
 import AppKit
 import Combine
 
-struct ClipboardEntry: Identifiable {
+struct ClipboardEntry: Identifiable, Sendable {
     let id = UUID()
     let timestamp: Date
     let sourceApp: String
@@ -9,6 +9,7 @@ struct ClipboardEntry: Identifiable {
     let detectedPatterns: [PatternType]
 }
 
+@MainActor
 class ClipboardHistoryManager: ObservableObject {
     @Published var entries: [ClipboardEntry] = []
     private let maxEntries = 100
@@ -21,11 +22,9 @@ class ClipboardHistoryManager: ObservableObject {
             sourceBundleId: frontmost?.bundleIdentifier ?? "",
             detectedPatterns: patterns
         )
-        DispatchQueue.main.async {
-            self.entries.insert(entry, at: 0)
-            if self.entries.count > self.maxEntries {
-                self.entries = Array(self.entries.prefix(self.maxEntries))
-            }
+        entries.insert(entry, at: 0)
+        if entries.count > maxEntries {
+            entries = Array(entries.prefix(maxEntries))
         }
     }
 }

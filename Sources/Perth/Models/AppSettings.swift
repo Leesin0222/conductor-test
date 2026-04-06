@@ -7,6 +7,7 @@ enum AlertSoundMode: String, CaseIterable {
     case silent = "무음"
 }
 
+@MainActor
 class AppSettings: ObservableObject {
     static let shared = AppSettings()
 

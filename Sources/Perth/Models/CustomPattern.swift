@@ -11,6 +11,7 @@ struct CustomPattern: Identifiable, Codable {
     }
 }
 
+@MainActor
 class CustomPatternManager: ObservableObject {
     @Published var patterns: [CustomPattern] = [] {
         didSet { save() }
