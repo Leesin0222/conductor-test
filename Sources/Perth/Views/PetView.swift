@@ -2,12 +2,13 @@ import SwiftUI
 
 struct PetView: View {
     @ObservedObject var petStateManager: PetStateManager
+    @ObservedObject var safetyStreak: SafetyStreak
     @State private var bounceOffset: CGFloat = 0
     @State private var isShaking = false
 
     var body: some View {
-        VStack(spacing: 8) {
-            Text(petStateManager.state.emoji)
+        VStack(spacing: 6) {
+            Text(petStateManager.currentEmoji)
                 .font(.system(size: 64))
                 .offset(y: bounceOffset)
                 .rotationEffect(isShaking ? .degrees(5) : .degrees(0))
@@ -19,8 +20,12 @@ struct PetView: View {
                 )
 
             SpeechBubble(text: petStateManager.state.message)
+
+            Text(safetyStreak.streakMessage)
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
         }
-        .padding()
+        .padding(.vertical, 8)
         .onChange(of: petStateManager.state) { _, newState in
             switch newState {
             case .alert:

@@ -1,6 +1,42 @@
 import Foundation
 import Combine
 
+enum PetCharacter: String, CaseIterable, Identifiable {
+    case cat, dog, rabbit, bear
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .cat: return "고양이"
+        case .dog: return "강아지"
+        case .rabbit: return "토끼"
+        case .bear: return "곰"
+        }
+    }
+
+    func emoji(for state: PetState) -> String {
+        switch (self, state) {
+        case (.cat, .happy):    return "🐱"
+        case (.cat, .sleeping): return "😺"
+        case (.cat, .alert):    return "🙀"
+        case (.cat, .worried):  return "😿"
+        case (.dog, .happy):    return "🐶"
+        case (.dog, .sleeping): return "🐕"
+        case (.dog, .alert):    return "🐕‍🦺"
+        case (.dog, .worried):  return "🐩"
+        case (.rabbit, .happy):    return "🐰"
+        case (.rabbit, .sleeping): return "🐇"
+        case (.rabbit, .alert):    return "🐰"
+        case (.rabbit, .worried):  return "🐇"
+        case (.bear, .happy):    return "🐻"
+        case (.bear, .sleeping): return "🧸"
+        case (.bear, .alert):    return "🐻‍❄️"
+        case (.bear, .worried):  return "🧸"
+        }
+    }
+}
+
 enum PetState: String, CaseIterable {
     case happy
     case sleeping
@@ -28,14 +64,32 @@ enum PetState: String, CaseIterable {
 
 class PetStateManager: ObservableObject {
     @Published var state: PetState = .happy
+    @Published var character: PetCharacter {
+        didSet { UserDefaults.standard.set(character.rawValue, forKey: "petCharacter") }
+    }
     private var cooldownTimer: Timer?
+    private var timeOfDayTimer: Timer?
+
+    var currentEmoji: String {
+        character.emoji(for: state)
+    }
+
+    init() {
+        if let raw = UserDefaults.standard.string(forKey: "petCharacter"),
+           let saved = PetCharacter(rawValue: raw) {
+            self.character = saved
+        } else {
+            self.character = .cat
+        }
+        startTimeOfDayUpdates()
+    }
 
     func triggerAlert() {
         state = .alert
         cooldownTimer?.invalidate()
         cooldownTimer = Timer.scheduledTimer(withTimeInterval: 15.0, repeats: false) { [weak self] _ in
             DispatchQueue.main.async {
-                self?.state = .happy
+                self?.updateForTimeOfDay()
             }
         }
     }
@@ -43,6 +97,25 @@ class PetStateManager: ObservableObject {
     func setSleeping(_ sleeping: Bool) {
         if sleeping {
             cooldownTimer?.invalidate()
+            state = .sleeping
+        } else {
+            updateForTimeOfDay()
+        }
+    }
+
+    private func startTimeOfDayUpdates() {
+        updateForTimeOfDay()
+        timeOfDayTimer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { [weak self] _ in
+            DispatchQueue.main.async {
+                guard let self = self, self.state != .alert else { return }
+                self.updateForTimeOfDay()
+            }
+        }
+    }
+
+    private func updateForTimeOfDay() {
+        let hour = Calendar.current.component(.hour, from: Date())
+        if hour >= 23 || hour < 6 {
             state = .sleeping
         } else {
             state = .happy
