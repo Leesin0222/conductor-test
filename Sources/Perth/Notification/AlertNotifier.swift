@@ -1,4 +1,4 @@
-import UserNotifications
+import AppKit
 
 class AlertNotifier {
     private var lastNotificationTime: Date = .distantPast
@@ -9,17 +9,14 @@ class AlertNotifier {
         guard now.timeIntervalSince(lastNotificationTime) >= cooldown else { return }
         lastNotificationTime = now
 
-        let content = UNMutableNotificationContent()
-        content.title = "🙀 민감한 정보 감지!"
-        content.body = "\(match.patternType.rawValue)이(가) 클립보드에서 발견되었어요. 조심하세요!"
-        content.sound = .default
-        content.threadIdentifier = match.patternType.rawValue
+        let title = "🙀 민감한 정보 감지!"
+        let body = "\(match.patternType.rawValue)이(가) 클립보드에서 발견되었어요. 조심하세요!"
 
-        let request = UNNotificationRequest(
-            identifier: UUID().uuidString,
-            content: content,
-            trigger: nil
-        )
-        UNUserNotificationCenter.current().add(request)
+        // NSUserNotification works without an .app bundle (unlike UNUserNotificationCenter)
+        let notification = NSUserNotification()
+        notification.title = title
+        notification.informativeText = body
+        notification.soundName = NSUserNotificationDefaultSoundName
+        NSUserNotificationCenter.default.deliver(notification)
     }
 }
