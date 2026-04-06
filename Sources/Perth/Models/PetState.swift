@@ -70,12 +70,14 @@ class PetStateManager: ObservableObject {
     }
     private var cooldownTimer: Timer?
     private var timeOfDayTimer: Timer?
+    private weak var settings: AppSettings?
 
     var currentEmoji: String {
         character.emoji(for: state)
     }
 
-    init() {
+    init(settings: AppSettings? = nil) {
+        self.settings = settings
         if let raw = UserDefaults.standard.string(forKey: "petCharacter"),
            let saved = PetCharacter(rawValue: raw) {
             self.character = saved
@@ -116,10 +118,18 @@ class PetStateManager: ObservableObject {
 
     private func updateForTimeOfDay() {
         let hour = Calendar.current.component(.hour, from: Date())
-        if hour >= 23 || hour < 6 {
-            state = .sleeping
+        let sleepHour = settings?.petSleepHour ?? 23
+        let wakeHour = settings?.petWakeHour ?? 6
+
+        let isSleeping: Bool
+        if sleepHour > wakeHour {
+            // Normal: e.g. wake=6, sleep=23 → sleeping when hour >= 23 OR hour < 6
+            isSleeping = hour >= sleepHour || hour < wakeHour
         } else {
-            state = .happy
+            // Inverted: e.g. wake=22, sleep=6 (night owl) → sleeping when hour >= 6 AND hour < 22
+            isSleeping = hour >= sleepHour && hour < wakeHour
         }
+
+        state = isSleeping ? .sleeping : .happy
     }
 }

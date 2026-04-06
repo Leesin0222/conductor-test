@@ -6,8 +6,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var screenShareDetector: ScreenShareDetector!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let petStateManager = PetStateManager()
         let settings = AppSettings.shared
+        let petStateManager = PetStateManager(settings: settings)
         let detector = SensitiveDataDetector()
         let customPatternManager = CustomPatternManager()
         detector.customPatternManager = customPatternManager
